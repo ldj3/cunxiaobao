@@ -1,0 +1,369 @@
+<?php 
+namespace App\Http\Controllers\Backstage;
+
+use App\Models\EntryGoods;
+use App\Models\EntryShop;
+use App\Models\EntryUnit;
+use App\Models\EntryGoodsUnitPrice;
+use Session;
+use DB;
+use Input;
+use App\Http\Controllers\SyncFileController;
+use App\Http\Controllers\BaseController;
+
+
+class GoodsController extends BaseController {
+    
+    public function __construct(){
+        $this->backstage_auth();
+    }
+
+    public function index(){
+        $this->arr_title[] = "商品列表";
+        $showGoodsPermit = $this->showGoodsPermit();
+        if($showGoodsPermit){
+            return view("backstage.goods",["arr_title"=>$this->arr_title]);
+        }else{
+            $menu_id = Input::get("menu_id");
+            $data = array(
+                        "arr_title" => $this->arr_title,
+                        "menu_id" => $menu_id
+                    );
+            return view("backstage.nopermit",$data);
+        }
+    }
+    
+    //商品列表数据请求
+    public function search(){
+        $showGoodsPermit = true;//$this->showGoodsPermit();
+        if($showGoodsPermit){
+            $enterpriseId = trim(Session::get("enterpriseId"));
+            $warehouseId = Session::get("warehouseId");
+            $warehouseId = explode(",", $warehouseId); 
+            $keyword = trim(Input::get("searchString"));
+            $barcode = trim(Input::get("barcode"));
+            $page = Input::get("page")?trim(Input::get("page")):1;
+            $rows = Input::get("rows")?trim(Input::get("rows")):20;
+            if(empty($enterpriseId)){
+                $rows = '[{"goodsName":"","tradePrice":"","retailPrice":"","costPrice":"","property1":"","property2":"","property3":"","totalQty":"","barcode":""},{"goodsName":"","tradePrice":"","retailPrice":"","costPrice":"","property1":"","property2":"","property3":"","totalQty":"","barcode":""},{"goodsName":"","tradePrice":"","retailPrice":"","costPrice":"","property1":"","property2":"","property3":"","totalQty":"","barcode":""},{"goodsName":"","tradePrice":"","retailPrice":"","costPrice":"","property1":"","property2":"","property3":"","totalQty":"","barcode":""},{"goodsName":"","tradePrice":"","retailPrice":"","costPrice":"","property1":"","property2":"","property3":"","totalQty":"","barcode":""},{"goodsName":"","tradePrice":"","retailPrice":"","costPrice":"","property1":"","property2":"","property3":"","totalQty":"","barcode":""},{"goodsName":"","tradePrice":"","retailPrice":"","costPrice":"","property1":"","property2":"","property3":"","totalQty":"","barcode":""},{"goodsName":"","tradePrice":"","retailPrice":"","costPrice":"","property1":"","property2":"","property3":"","totalQty":"","barcode":""},{"goodsName":"","tradePrice":"","retailPrice":"","costPrice":"","property1":"","property2":"","property3":"","totalQty":"","barcode":""},{"goodsName":"","tradePrice":"","retailPrice":"","costPrice":"","property1":"","property2":"","property3":"","totalQty":"","barcode":""}]';
+                $rows = json_decode($rows);
+                $data = array("total"=>0,"page"=>$page,"records"=>0,"rows"=>$rows,"status" => 0,"msg" => "请重新登陆");
+            }else{
+                $goodsObj = new EntryGoods;
+                $goods = $goodsObj->goodsList($enterpriseId,$keyword,$barcode,$warehouseId,$page,$rows);
+                if(!empty($goods["goods"])){
+                    $entryShop = new EntryShop;
+                    $property = $entryShop->getShopThreeAtt(Session::get("shopId"));
+                    $property = obj2arr($property);
+                    $goodsList = [];
+                    for($a = 0;$a < count($goods["goods"]);$a++){
+                        $goodsList[$a]["id"] = $goods["goods"][$a]["id"];
+                        if($goods["goods"][$a]["isBivariate"] == 1) {
+                            $goodsList[$a]["goodsName"] = '[二维]<a href="/special/goods/bivariate/'.$goods["goods"][$a]["id"].'">'.$goods["goods"][$a]["name"].'</a>';
+                            $goodsList[$a]["totalQty"] = "";
+                        } else {
+                            $goodsList[$a]["goodsName"] = '<a href="/special/goods/info/'.$goods["goods"][$a]["id"].'">'.$goods["goods"][$a]["name"].'</a>';
+                            $goodsList[$a]["totalQty"] = $goods["goods"][$a]["totalQty"];
+                        }
+                        $goodsList[$a]["tradePrice"] = "";
+                        $goodsList[$a]["retailPrice"] = "";
+                        $goodsList[$a]["costPrice"] = "";
+                        for($b = 0; $b < count($goods["goods"][$a]["unit"]);$b++) {
+                            if($b > 0) {
+                                $goodsList[$a]["tradePrice"] .= " | ";
+                                $goodsList[$a]["retailPrice"] .= " | ";
+                                $goodsList[$a]["costPrice"] .= " | ";
+                            }
+                            $goodsList[$a]["tradePrice"] .= $goods["goods"][$a]["unit"][$b]["tradePrice"].'( '.$goods["goods"][$a]["unit"][$b]["unit"].' )';
+                            
+                            $goodsList[$a]["retailPrice"] .= $goods["goods"][$a]["unit"][$b]["retailPrice"].'( '.$goods["goods"][$a]["unit"][$b]["unit"].' )';
+                            
+                            $goodsList[$a]["costPrice"] .= $goods["goods"][$a]["unit"][$b]["costPrice"].'( '.$goods["goods"][$a]["unit"][$b]["unit"].' )';
+                        }
+                        $goodsList[$a]["property1"] = $goods["goods"][$a]["property1"];
+                        $goodsList[$a]["property2"] = $goods["goods"][$a]["property2"];
+                        $goodsList[$a]["property3"] = $goods["goods"][$a]["property3"];
+                        $goodsList[$a]["barcode"] = "";
+                        for($c = 0; $c < count($goods["goods"][$a]["unit"]); $c++) {
+                            if($c > 0) {
+                                $goodsList[$a]["barcode"] .= " | ";
+                            }
+                            if($goods["goods"][$a]["unit"][$c]["barcode"] != null && $goods["goods"][$a]["unit"][$c]["barcode"] != "") {
+                                $goodsList[$a]["barcode"] .= $goods["goods"][$a]["unit"][$c]["barcode"];
+                            }
+                            if($goods["goods"][$a]["unit"][$c]["barcode1"] != null && $goods["goods"][$a]["unit"][$c]["barcode1"] != "") {
+                                if($goods["goods"][$a]["unit"][$c]["barcode"]) {
+                                    $goodsList[$a]["barcode"] .= " | ";
+                                }
+                                $goodsList[$a]["barcode"] .= $goods["goods"][$a]["unit"][$c]["barcode1"];
+                            }
+                        }
+                    }
+                    $total =  ceil($goods["total"]/$rows);
+                    $data = array("status" => 1,"msg" => "数据请求成功","rows" => $goodsList,"records" => $goods["total"],"total"=>$total);
+                    $data["property"]= $property;
+                    $data["page"]= $page;
+                    
+                }else{
+                    $rows = '[{"goodsName":"","tradePrice":"","retailPrice":"","costPrice":"","property1":"","property2":"","property3":"","totalQty":"","barcode":""},{"goodsName":"","tradePrice":"","retailPrice":"","costPrice":"","property1":"","property2":"","property3":"","totalQty":"","barcode":""},{"goodsName":"","tradePrice":"","retailPrice":"","costPrice":"","property1":"","property2":"","property3":"","totalQty":"","barcode":""},{"goodsName":"","tradePrice":"","retailPrice":"","costPrice":"","property1":"","property2":"","property3":"","totalQty":"","barcode":""},{"goodsName":"","tradePrice":"","retailPrice":"","costPrice":"","property1":"","property2":"","property3":"","totalQty":"","barcode":""},{"goodsName":"","tradePrice":"","retailPrice":"","costPrice":"","property1":"","property2":"","property3":"","totalQty":"","barcode":""},{"goodsName":"","tradePrice":"","retailPrice":"","costPrice":"","property1":"","property2":"","property3":"","totalQty":"","barcode":""},{"goodsName":"","tradePrice":"","retailPrice":"","costPrice":"","property1":"","property2":"","property3":"","totalQty":"","barcode":""},{"goodsName":"","tradePrice":"","retailPrice":"","costPrice":"","property1":"","property2":"","property3":"","totalQty":"","barcode":""},{"goodsName":"","tradePrice":"","retailPrice":"","costPrice":"","property1":"","property2":"","property3":"","totalQty":"","barcode":""}]';
+                    $rows = json_decode($rows);
+                    $data = array("total"=>0,"page"=>$page,"records"=>0,"rows"=>$rows,"status" => 0,"msg" => "请重新登陆");
+                }
+            }
+            return response()->json($data);
+        }else{
+            $data = array("status" => 0,"msg" => "暂无权限");
+            return response()->json($data);
+        }
+    }
+    
+    //商品删除--一维
+    public function del(){
+        $delGoodsPermit = $this->delGoodsPermit();
+        if(!$delGoodsPermit){
+            $data = array("status" => 0,"msg" => "暂无权限");
+            return response()->json($data);
+        }
+        $goodsId = trim(Input::get("id"));
+        $enterpriseId = Session::get("enterpriseId");
+        if(!$goodsId){
+           $data = array("status" => 0,"msg" => "参数错误");
+           return response()->json($data); 
+        }
+        $entryGoods = new EntryGoods;
+        $rt = $entryGoods->delGoods($goodsId,$enterpriseId);
+        if(!$rt){
+            $data = array("status" => 0,"msg" => "操作失败，请重新操作");
+            return response()->json($data); 
+        }
+        //$bs = new BaiduPush;
+        //$bs->synPush(Session::get("enterpriseId"),Session::get("uid"));
+        $data = array("status" => 1,"msg" => "删除成功");
+        return response()->json($data);
+    }
+    
+    //获取商品属性单位列表
+    public function getShopProperty(){
+        $addGoodsPermit = $this->addGoodsPermit();
+        if(!$addGoodsPermit){
+            $data = array("status" => 0,"msg" => "暂无权限");
+            return response()->json($data);
+        }
+        $entryShop = new EntryShop();
+        $entryUnit = new EntryUnit();
+        $shopId = Session::get("shopId");
+        $enterpriseId = Session::get("enterpriseId");
+        $rows = Input::get("rows")?Input::get("rows"):1000;
+        
+        $property = $entryShop->getShopThreeAtt($shopId);
+        $unitGroupList = $entryUnit->unitList($enterpriseId,1,$rows);
+        
+        $arr["property"] = $property;
+        $arr["unitGroupList"] = $unitGroupList;
+        
+        $data = array("status" => 1,"msg" => "数据请求成功","data" => $arr);
+        return response()->json($data);
+    }
+    
+    //商品新增
+    /*
+     *  循环已用字段，$a,$b,$c,$i,$j
+     */
+    public function addGoods(){
+        $addGoodsPermit = $this->addGoodsPermit();
+        if(!$addGoodsPermit){
+            $data = array("status" => 0,"msg" => "暂无权限");
+            return response()->json($data);
+        }
+        $goodsName = trim(Input::get("name"));
+        $property1 = trim(Input::get("property1"));
+        $property2 = trim(Input::get("property2"));
+        $property3 = trim(Input::get("property3"));
+        $unitGroupId = trim(Input::get("unitGroupId"));
+        
+        if(!$goodsName){
+            $data = array("status" => 0,"msg" => "商品名称不可为空");
+            return response()->json($data);
+        }
+        if(!$property1){
+            $data = array("status" => 0,"msg" => "商品第一属性不可为空");
+            return response()->json($data);
+        }
+        if(!$unitGroupId){
+            $data = array("status" => 0,"msg" => "单位分组不可为空");
+            return response()->json($data);
+        }
+        
+        $entryGoods = new EntryGoods();
+        $entryUnit = new EntryUnit();
+        $entryGoodsUnitPrice = new EntryGoodsUnitPrice();
+        
+        $enterpriseId = Session::get("enterpriseId");
+        $shopId = Session::get("shopId");
+        $userName = Session::get("name");
+        $userId = Session::get("uid");
+        
+        $unitNum = $entryUnit->unitGroupListNum($unitGroupId);
+        $unitPriceData = array();
+        for($i = 0;$i < $unitNum;$i++){
+            $unitPriceData[$i]["unitId"] = trim(Input::get("unit_".$i));
+            $unitPriceData[$i]["unitName"] = trim(Input::get("unitName_".$i));
+            $unitPriceData[$i]["unitSort"] = trim(Input::get("unitSort_".$i));
+            $unitPriceData[$i]["tradePrice"] = trim(Input::get("tradePrice_".$i))?trim(Input::get("tradePrice_".$i)):0;
+            $unitPriceData[$i]["retailPrice"] = trim(Input::get("retailPrice_".$i))?trim(Input::get("retailPrice_".$i)):0;
+            $unitPriceData[$i]["retailPrice1"] = trim(Input::get("retailPrice1_".$i))?trim(Input::get("retailPrice1_".$i)):0;
+            $unitPriceData[$i]["costPrice"] = trim(Input::get("costPrice_".$i))?trim(Input::get("costPrice_".$i)):0;
+            $unitPriceData[$i]["limitPrice"] = trim(Input::get("limitPrice_".$i))?trim(Input::get("limitPrice_".$i)):0;
+            $unitPriceData[$i]["barcode"] = trim(Input::get("barcode_".$i));
+            $unitPriceData[$i]["barcode1"] = trim(Input::get("barcode1_".$i));
+        }
+        $goodsMaxVersion = max_version("base_goods",$enterpriseId)+1;
+        $goodsUnitPriceMaxVersion = max_version("biz_goods_unit_info",$enterpriseId)+1;
+        $isBatch = 0;
+        $shelfLife = 0;
+        $downlimitShelfLife = 0;
+        $isBivariate = Input::get("isBivariate")?Input::get("isBivariate"):0;
+        $propertyTitle1 = Input::get("propertyTitle1")?trim(Input::get("propertyTitle1")):"";
+        $propertyTitle2 = Input::get("propertyTitle2")?trim(Input::get("propertyTitle2")):"";
+        $category = "";
+        $image = "";
+        $remark = trim(Input::get("remark"));
+        
+        //事务开始
+        DB::beginTransaction();
+        
+        //插入记录
+        $goodsId = $entryGoods->addGoodsData($enterpriseId,$shopId,$userName,$goodsMaxVersion,$goodsName,$property1,$property2,$property3,$unitGroupId,$isBatch,$shelfLife,$downlimitShelfLife,$isBivariate,$category,$image,$propertyTitle1,$propertyTitle2,$remark);
+        if(!$goodsId){
+            DB::rollback();
+            $data = array("status" => 0,"msg" => "新增失败，请重新操作");
+            return response()->json($data);
+        }
+        
+        //单位价格信息插入
+        for($j = 0;$j < count($unitPriceData);$j++){
+            $unitPriceId = $entryGoodsUnitPrice->addGoodsUnitPrice($enterpriseId,$shopId,$userName,$goodsUnitPriceMaxVersion,$goodsId,null,$unitPriceData[$j]["unitId"],$unitPriceData[$j]["unitName"],$unitPriceData[$j]["unitSort"],0,0,$unitPriceData[$j]["limitPrice"],$unitPriceData[$j]["retailPrice"],$unitPriceData[$j]["retailPrice1"],$unitPriceData[$j]["tradePrice"],$unitPriceData[$j]["costPrice"],$unitPriceData[$j]["barcode"],$unitPriceData[$j]["barcode1"]);
+            if(!$unitPriceId){
+                DB::rollback();
+                $data = array("status" => 0,"msg" => "新增失败，请重新操作");
+                return response()->json($data);
+            }
+        }
+        
+        //二维商品处理
+        if($isBivariate){
+            $goodsDimensionalMaxVersion = max_version("base_goods_dimensional",$enterpriseId)+1;
+            $property_title1 = trim(Input::get("property_title1"));
+            $property_title2 = trim(Input::get("property_title2"));
+            $propertyArr1 = explode(",",$property_title1);
+            $propertyArr2 = explode(",",$property_title2);
+
+            for($a = 0;$a < count($propertyArr1);$a++){
+                for($b = 0;$b<count($propertyArr2);$b++){
+                    //二维商品信息插入
+                    $goodsDimensionalId = $entryGoods->addGoodsDimensional($enterpriseId,$shopId,$userName,$goodsDimensionalMaxVersion,$goodsId,$propertyArr1[$a],$propertyArr2[$b],null,null);
+                    if(!$goodsDimensionalId){
+                        DB::rollback();
+                        $data = array("status" => 0,"msg" => "新增失败，请重新操作");
+                        return response()->json($data);
+                    }
+                    //二维单位价格信息插入
+                    for($c = 0;$c < count($unitPriceData);$c++){
+                        $dimensionalUnitPriceId = $entryGoodsUnitPrice->addGoodsUnitPrice($enterpriseId,$shopId,$userName,$goodsUnitPriceMaxVersion,$goodsId,$goodsDimensionalId,$unitPriceData[$c]["unitId"],$unitPriceData[$c]["unitName"],$unitPriceData[$c]["unitSort"],0,0,0,0,0,0,0,"","");
+                        if(!$dimensionalUnitPriceId){
+                            DB::rollback();
+                            $data = array("status" => 0,"msg" => "新增失败，请重新操作");
+                            return response()->json($data);
+                        }
+                    }
+                }
+            }
+        }
+        //事务提交
+        DB::commit();
+        //$bs = new BaiduPush;
+        //$bs->synPush($enterpriseId,$userId);
+        $data = array("status" => 1,"msg" => "商品添加成功");
+        return response()->json($data);
+    }
+    
+    //新增商品标签组名
+    public function addTagGroup(){
+        $userName = Session::get("name");
+        $enterpriseId = Session::get("enterpriseId");
+        $shopId = Session::get("shopId");
+        $tagName = trim(Input::get("name"));
+        $idType = Input::get("idtype");
+        $arr = array();
+        $arr["id"] = get_newid("biz_goods_tag");
+        $arr["is_deleted"] = 0;
+        $arr["create_date"] = get_ms();
+        $arr["modify_date"] = get_ms();
+        $arr["creator"] = $userName;
+        $arr["editor"] = $userName;
+        $arr["enterprise"] = $enterpriseId;
+        $arr["version"] = max_version("biz_goods_tag",$enterpriseId)+1;
+        $arr["shop"] = $shopId;
+        $arr["sort"] = 0;
+        $arr["idtype"] = $idType;
+        $arr["parent_id"] = "";
+        $arr["tag_name"] = $tagName;
+        
+        if($tagName == "" || $tagName == null){
+            $data = array("status" => 0,"msg" => "分组名不可为空");
+        }else{
+            $rtn = DB::table("biz_goods_tag")->insert($arr);
+            $data = array("status" => 1,"msg" => "新增分组成功");
+        }
+        return response()->json($data);
+    }
+   
+    //删除商品标签分组
+    public function delTagGroup(){
+        $tagId = Input::get("tagId");
+        $enterpriseId = Session::get("enterpriseId");
+        if($tagId == "" || $tagId == null){
+            $data = array("status" => 0,"msg" => "参数错误");
+        }else{
+            $arr = array();
+            $arr["is_deleted"] = 1;
+            $arr["modify_date"] = get_ms();
+            $arr["version"] = max_version("biz_goods_tag",$enterpriseId)+1;
+            $rtn = DB::table("biz_goods_tag")->where("id",$tagId)->update($arr);
+            $data = array("status" => 1,"msg" => "删除成功");
+        }
+        return response()->json($data);
+   }
+   
+    //新增标签分组子项
+    public function addTagSon(){
+        $tagName = Input::get("name");
+        $userName = Session::get("name");
+        $parentId = Input::get("parent_id");
+        $enterpriseId = Session::get("enterpriseId");
+        $shopId = Session::get("shopId");
+        if($tagName == "" || $tagName == null || $parentId == "" || $parentId == null ){
+            $data = array("status" => 0,"msg" => "参数错误");
+        }else{
+            $arr = array();
+            $arr["id"] = get_newid("biz_goods_tag");
+            $arr["is_deleted"] = 0;
+            $arr["create_date"] = get_ms();
+            $arr["modify_date"] = get_ms();
+            $arr["creator"] = $userName;
+            $arr["editor"] = $userName;
+            $arr["enterprise"] = $enterpriseId;
+            $arr["version"] = max_version("biz_goods_tag",$enterpriseId)+1;
+            $arr["shop"] = $shopId;
+            $arr["sort"] = 0;
+            $arr["tag_name"] = $tagName;
+            $arr["parent_id"] = $parentId;
+            $arr["idtype"] = DB::table("biz_goods_tag")
+                               ->where("id",$arr["parent_id"])
+                               ->pluck("idtype");
+            $rtn = DB::table("biz_goods_tag")->insert($arr);
+            $data = array("status" => 1,"msg" => "新增子项成功");
+        }
+        return response()->json($data);
+    }
+}

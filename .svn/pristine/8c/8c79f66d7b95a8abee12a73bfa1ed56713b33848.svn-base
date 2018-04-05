@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+
+    <head>
+        <meta charset="utf-8" />
+        <link href="/ace/css/bootstrap.min.css" rel="stylesheet" />
+        <link rel="stylesheet" href="/ace/css/font-awesome.min.css" />
+
+        <!--[if IE 7]>
+        <link rel="stylesheet" href="assets/css/font-awesome-ie7.min.css" />
+    <![endif]-->
+
+        <!-- page specific plugin styles -->
+        <!-- ace styles -->
+        <link rel="stylesheet" href="/ace/css/jquery-ui-1.10.3.full.min.css" />
+        <link rel="stylesheet" href="/ace/css/ui.jqgrid.css" />
+        <link rel="stylesheet" href="/ace/css/ace.min.css" />
+        <link rel="stylesheet" href="/ace/css/ace-rtl.min.css" />
+        <link rel="stylesheet" href="/ace/css/ace-skins.min.css" />
+
+        <!--[if lte IE 8]>
+        <link rel="stylesheet" href="assets/css/ace-ie.min.css" />
+    <![endif]-->
+
+        <!-- inline styles related to this page -->
+
+        <!-- ace settings handler -->
+    </head>
+
+    <body>
+        <div class="page-content show" id="showInfo">
+            <div class="col-xs-12">
+                <div class="row">
+                    <div class="page-header">
+                        <h1>商品新增
+                            <small>
+                                <i class="icon-double-angle-right"></i>
+                            </small>
+                        </h1>
+                    </div>
+                    <div class="panel-group accordion-style1 accordion-style2">
+                        <form id="add_form" name="add_form" class="form-horizontal">
+                            <div class="form-group">
+                                <label class="col-sm-2 control-label no-padding-right" for="name">
+                                    <font color="red">*</font>
+                                    商品名称
+                                </label>
+                                <div class="col-sm-10">
+                                    <input id="name" name="name" size="20px" type="text" placeholder="名称不可为空">
+                                    <span id="nameTip"></span>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label id="label_property1" class="col-sm-2 control-label no-padding-right" for="property1">
+                                    <font color="red">*</font>
+                                    <span id="propertyOneTitle">属性一</span>
+                                </label>
+                                <div class="col-sm-10">
+                                    <input id="property1" name="property1" size="20px" type="text" placeholder="属性一不可为空">
+                                    <span id="property1Tip"></span>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label id="label_property2" class="col-sm-2 control-label no-padding-right" for="property2">
+                                    <span id="propertyTwoTitle">属性二</span>
+                                </label>
+                                <div class="col-sm-10">
+                                    <input id="property2" name="property2" size="20px" type="text">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label id="label_property3" class="col-sm-2 control-label no-padding-right" for="property3">
+                                    <span id="propertyThreeTitle">属性三</span>
+                                </label>
+                                <div class="col-sm-10">
+                                    <input id="property3" name="property3" size="20px" type="text">
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="col-sm-2 control-label no-padding-right" for="unit">
+                                    <font color="red">*</font>
+                                    商品单位
+                                </label>
+                                <div class="col-sm-10">
+                                    <select name="unitGroupId" id="unitGroupId" onchange="showPrice(this.value)">
+                                        <option value="">----请选择----</option>
+                                    </select>
+                                    <span id="unitTip"></span>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group" id="showUnit">
+                                
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="col-sm-2 control-label no-padding-right" for="remark">备注</label>
+                                <div class="col-sm-10">
+                                    <textarea id="remark" name="remark" type="text" rows="3" cols="50" placeholder="这是备注"></textarea>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="col-sm-2 control-label no-padding-right" for="isBivariate">
+                                    是否开启二维
+                                </label>
+                                <div class="col-sm-10">
+                                    <input name="isBivariate" id="isBivariate" onclick="openBiva()" class="ace ace-switch ace-switch-4" type="checkbox" value="1"/>
+                                    <span class="lbl"></span>
+                                </div>
+                            </div>
+                            <div class="form-group" id="showTag" style="display:none">
+                                
+                            </div>
+                            <div id="dialog-message" class="hide">
+                                组名：<input name="groupName" id="groupName" class="ace ace-switch ace-switch-4" type="text"/>
+                            </div>
+                            <div id="dialog-confirm" class="hide">
+                                属性名：<input name="propertyName" id="propertyName" class="ace ace-switch ace-switch-4" type="text"/>
+                            </div>
+                            <div id="dialog-message-son" class="hide">
+                                子项名：<input name="groupSonName" id="groupSonName" class="ace ace-switch ace-switch-4" type="text"/>
+                            </div>
+                            <div class="clearfix form-actions">
+                                <div class="col-md-offset-3 col-md-9">
+                                    <button class="btn btn-info" type="button">
+                                        <i class="icon-ok bigger-110"></i>
+                                        提交
+                                    </button>
+                                </div>
+                                <button id="ceshi" value="cesjkfdsalk">dianji</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+        
+        <style type="text/css">
+            body {
+                background-color: #FFFFFF;
+            }
+        </style>
+        <!-- basic scripts -->
+
+        <script type="text/javascript">
+            window.jQuery || document.write("<script src='/ace/js/jquery-2.0.3.min.js'>" + "<" + "script>");
+            $("ceshi").click(function () {
+                  addTabs({ id: $(this).attr("id"), title: "ceshi", close: true });
+                 });
+        </script>
+
+        <script src="/ace/js/ace-extra.min.js"></script>
+        <!--[if lt IE 9]>
+            <script src="assets/js/html5shiv.js"></script>
+            <script src="assets/js/respond.min.js"></script>
+        <![endif]-->
+
+                <!--[if IE]>
+        <script type="text/javascript">
+         window.jQuery || document.write("<script src='/ace/js/jquery-1.10.2.min.js'>"+"<"+"script>");
+        </script>
+        <![endif]-->
+
+        <script type="text/javascript">
+            if("ontouchend" in document) document.write("<script src='/ace/js/jquery.mobile.custom.min.js'>" + "<" + "script>");
+        </script>
+
+        <script src='/ace/js/jquery-2.0.3.min.js'></script>
+
+        <!-- 自定义js -->
+        <script src="/ace/js/sidebar-menu.js"></script>
+        <script src="/ace/js/bootstrap-tab.js"></script>
+
+        <script src="/ace/js/bootstrap.min.js"></script>
+        <script src="/ace/js/typeahead-bs2.min.js"></script>
+        <!-- page specific plugin scripts -->
+
+        <!--[if lte IE 8]>
+            <script src="/ace/js/excanvas.min.js"></script>
+        <![endif]-->
+
+        <script src="/ace/js/jquery-ui-1.10.3.custom.min.js"></script>
+        <script src="/ace/js/jquery-ui-1.10.3.full.min.js"></script>
+        <script src="/ace/js/jquery.ui.touch-punch.min.js"></script>
+        <script src="/ace/js/jquery.slimscroll.min.js"></script>
+        <script src="/ace/js/jquery.easy-pie-chart.min.js"></script>
+        <script src="/ace/js/jquery.sparkline.min.js"></script>
+        <script src="/ace/js/flot/jquery.flot.min.js"></script>
+        <script src="/ace/js/flot/jquery.flot.pie.min.js"></script>
+        <script src="/ace/js/flot/jquery.flot.resize.min.js"></script>
+
+        <!-- ace scripts -->
+
+        <script src="/ace/js/ace-elements.min.js"></script>
+        <script src="/ace/js/ace.min.js"></script>
+        
+        <script type="text/javascript">
+            $(document).ready(function() {
+                showTag();
+                getShopProperty();
+                $("[class='btn btn-info']").click(function(){
+                    var property_title1="";
+                    var property_title2="";
+                    $("input[name='propertytitle1']:checked").each(function(){
+                        property_title1 += $(this).val()+",";
+                    });
+                    $("input[name='propertytitle2']:checked").each(function(){
+                        property_title2 += $(this).val()+",";
+                    });
+                    property_title1 = property_title1.substring(0,property_title1.length-1);
+                    property_title2 = property_title2.substring(0,property_title2.length-1);
+                    var nameVal = $("#name").val();
+                    var property1Val = $("#property1").val();
+                    var unitVal = $("#unitGroupId").val();
+                    if(nameVal == null || nameVal == ""){
+                        $("#nameTip").html("<font color='#ff0000'>商品名称不可为空</font>");
+                    }else if(property1Val == null || property1Val == ""){
+                        $("#nameTip").html("");
+                        $("#property1Tip").html("<font color='#ff0000'>商品第一个属性不可为空</font>");
+                    }else if(unitVal == null || unitVal == ""){
+                        $("#property1Tip").html("");
+                        $("#unitTip").html("<font color='#ff0000'>商品第一个属性不可为空</font>");
+                    }else{
+                        $("#unitTip").html("");
+                        var url = '/backstage/goods/addGoods';
+                        var query = $('#add_form').serialize();
+                        query += "&property_title1="+property_title1+"&property_title2="+property_title2+"&propertyTitle1="+$("#propertyOneVal").html()+"&propertyTitle2="+$("#propertyTwoVal").html();
+                        
+                        $.post(url, query,function(data){
+                            alert(data.msg);
+                            if(data.status){
+                                location.reload();
+                            }else{
+                                return false;
+                            }
+                        }, "json");
+                    }
+                });
+
+                $.widget("ui.dialog", $.extend({}, $.ui.dialog.prototype, {
+                    _title: function(title) {
+                        var $title = this.options.title || '&nbsp;'
+                        if( ("title_html" in this.options) && this.options.title_html == true )
+                            title.html($title);
+                        else title.text($title);
+                    }
+                }));
+                
+            });
+            
+            //是否开启二维
+            function openBiva(){
+                if($("#showTag").is(":hidden")){
+                    $("#is_bivariate").val(1);
+                    $("#showTag").css('display','block');
+                }else{
+                    $("#is_bivariate").val(0);
+                    $("#showTag").css('display','none'); 
+                }
+                
+            }
+            
+            //新增组名
+            function addName(obj){
+                $("#groupName").val("");
+                var dialog = $( "#dialog-message" ).removeClass('hide').dialog({
+                        modal: true,
+                        title: "<div class='widget-header widget-header-small'><h4 class='smaller'><i class='icon-ok'></i>新增组名</h4></div>",
+                        title_html: true,
+                        buttons: [ 
+                            {
+                                text: "取消",
+                                "class" : "btn btn-xs",
+                                click: function() {
+                                    $( this ).dialog( "close" ); 
+                                } 
+                            },{
+                                text: "提交",
+                                "class" : "btn btn-primary btn-xs",
+                                click: function() {
+                                    var url = '/backstage/goods/addTagGroup';
+                                    var query = "idtype="+obj+"&name="+$("#groupName").val();
+                                    $.post(url,query,function(data){
+                                        alert(data.msg);
+                                        if(data.status){
+                                            showTag();
+                                            //window.location.reload();
+                                        }else{
+                                            return false;
+                                        }
+                                    });
+                                    $( this ).dialog( "close" ); 
+                                } 
+                            }
+                        ]
+                    });
+            }
+            
+            //新增子项名
+            function addSonName(obj){
+                $("#groupSonName").val("");
+                var dialog = $( "#dialog-message-son" ).removeClass('hide').dialog({
+                        modal: true,
+                        title: "<div class='widget-header widget-header-small'><h4 class='smaller'><i class='icon-ok'></i>新增子项名</h4></div>",
+                        title_html: true,
+                        buttons: [ 
+                            {
+                                text: "取消",
+                                "class" : "btn btn-xs",
+                                click: function() {
+                                    $( this ).dialog( "close" ); 
+                                } 
+                            },
+                            {
+                                text: "提交",
+                                "class" : "btn btn-primary btn-xs",
+                                click: function() {
+                                    var url = '/backstage/goods/addTagSon';
+                                    var query = "parent_id="+obj+"&name="+$("#groupSonName").val();
+                                    $.post(url,query,function(data){
+                                        alert(data.msg);
+                                        if(data.status){
+                                            showTag();
+                                        }else{
+                                            return false;
+                                        }
+                                    });
+                                    $( this ).dialog( "close" );
+                                } 
+                            }
+                        ]
+                    });
+            }
+            
+            
+            //修改属性名
+            function updateGroup(obj){
+                $("#propertyName").val("");
+                var objId = "#"+obj;
+                $("#propertyName").val($(objId).html());
+                var propertyVal = $("#propertyName").val();
+                $( "#dialog-confirm" ).removeClass('hide').dialog({
+                    resizable: false,
+                    modal: true,
+                    title: "<div class='widget-header'><h4 class='smaller'><i class='icon-edit '></i> 修改属性名</h4></div>",
+                    title_html: true,
+                    buttons: [
+                        {
+                            html: "<i class='icon-remove bigger-110'></i>",
+                            "class" : "btn btn-xs",
+                            click: function(){
+                                $( this ).dialog( "close" );
+                            }
+                        }
+                        ,
+                        {
+                            html: "<i class='icon-check bigger-110'></i>",
+                            "class" : "btn btn-primary btn-xs",
+                            click: function(){
+                                if($("#propertyName").val()=="" || $("#propertyName").val()==null){
+                                    $("#propertyName").val(propertyVal);
+                                }
+                                $(objId).html($("#propertyName").val());
+                                $( this ).dialog( "close" );
+                            }
+                        }
+                    ]
+                });
+            }
+            
+            //删除分组
+            function delGroup(obj){
+                if(confirm("确定删除此分组吗?")){
+                    var url = '/backstage/goods/delTagGroup';
+                    var query = "tagId="+obj;
+                    $.post(url,query,function(data){
+                        alert(data.msg);
+                        if(data.status)
+                        {
+                            showTag();
+                        }
+                        else
+                        {
+                            return false;
+                        }
+                    });
+                }
+            }
+            
+            //标签展示
+            function showTag(){
+                var url = '/backstage/goods/getTag';
+                $.post(url," ",function(data){
+                    if(data.status){
+                        var goodsTag = data.goodsTag;
+                        var html = '<div class="col-sm-2"></div>';
+                            html += '<div class="col-sm-7">';
+                                html += '<table class="table table-bordered table-hover">';
+                                    html += '<thead>';
+                                        html += '<tr>';
+                                            html += '<th colspan="2" class="action-buttons">';
+                                                html += '<a href="javascript:;" id="propertyOneVal" onclick="updateGroup(id)">';
+                                                    html += '颜色';
+                                                html += '</a>';
+                                                html += '<span style="float:right;">';
+                                                    html +='<a href="javascript:;" onclick="addName(1)" id="id-btn-dialog1" ><i class="icon-plus-sign purple bigger-150"></i></a> ';
+                                                html += '</span>';
+                                            html += '</th>';
+                                        html += '</tr>';
+                                    html += '</thead>';
+                                    html += '<tbody>';
+                                        for(var i = 0; i < goodsTag.length;i++){
+                                            if(goodsTag[i]["idtype"] == 1){
+                                                html += '<tr>';
+                                                    html += '<td width="150px" class="action-buttons">';
+                                                        html += '<span style="font-size:14px">'+goodsTag[i]["tag_name"]+'</span>';
+                                                        html += '<span style="float:right;">';
+                                                            var tagId = "'"+goodsTag[i]["id"]+"'";
+                                                            html +='<a href="javascript:;" onclick="addSonName('+tagId+')"><i class="icon-plus-sign purple bigger-150"></i></a> ';
+                                                            html +='<a href="javascript:;" onclick="delGroup('+tagId+')"><i class="icon-trash bigger-150"></i></a>';
+                                                        html += '</span>';
+                                                    html += '</td>';
+                                                    html += '<td>';
+                                                        for(var j = 0; j < goodsTag[i]["group"].length;j++){
+                                                            html += '<label style="margin-right:10px;">';
+                                                                html += '<input name="propertytitle1" type="checkbox" class="ace" value="'+goodsTag[i]["group"][j]["tag_name"]+'"/>';
+                                                                html += '<span class="lbl"> ';
+                                                                    html += goodsTag[i]["group"][j]["tag_name"];
+                                                                html += ' </span>';
+                                                            html += '</label>';
+                                                        }
+                                                    html += '</td>';
+                                                html += '</tr>';
+                                            }
+                                        }
+                                    html += '</tbody>';
+                                html += '</table>';
+                                
+                                html += '<table class="table table-bordered table-hover">';
+                                    html += '<thead>';
+                                        html += '<tr>';
+                                            html += '<th colspan="2" class="action-buttons">';
+                                                html += '<a href="javascript:;" id="propertyTwoVal" onclick="updateGroup(id)">';
+                                                    html += '尺寸';
+                                                html += '</a>';
+                                                html += '<span style="float:right;">';
+                                                    html +='<a href="javascript:;" onclick="addName(2)" id="id-btn-dialog1" ><i class="icon-plus-sign purple bigger-150"></i></a> ';
+                                                html += '</span>';
+                                            html += '</th>';
+                                        html += '</tr>';
+                                    html += '</thead>';
+                                    html += '<tbody>';
+                                        for(var a = 0; a < goodsTag.length; a++){
+                                            if(goodsTag[a]["idtype"] == 2){
+                                                html += '<tr>';
+                                                    html += '<td width="150px" class="action-buttons">';
+                                                        html += '<span style="font-size:14px">'+goodsTag[a]["tag_name"]+'</span>';
+                                                        html += '<span style="float:right;">';
+                                                            var goodsTagId = "'"+goodsTag[a]["id"]+"'";
+                                                            html +='<a href="javascript:;" onclick="addSonName('+goodsTagId+')"><i class="icon-plus-sign purple bigger-150"></i></a> ';
+                                                            html +='<a href="javascript:;" onclick="delGroup('+goodsTagId+')"><i class="icon-trash bigger-150"></i></a>';
+                                                        html += '</span>';
+                                                    html += '</td>';
+                                                    html += '<td>';
+                                                        for(var b = 0; b < goodsTag[a]["group"].length;b++){
+                                                            html += '<label style="margin-right:10px;">';
+                                                                html += '<input name="propertytitle2" type="checkbox" class="ace" value="'+goodsTag[a]["group"][b]["tag_name"]+'"/>';
+                                                                html += '<span class="lbl"> ';
+                                                                    html += goodsTag[a]["group"][b]["tag_name"];
+                                                                html += ' </span>';
+                                                            html += '</label>';
+                                                        }
+                                                    html += '</td>';
+                                                html += '</tr>';
+                                            }
+                                        }
+                                    html += '</tbody>';
+                                html += '</table>';
+                        html += '<div class="col-sm-3"></div>';
+                        $("#showTag").html(html);
+                    }else{
+                        var html = '<div class="col-sm-2"></div>';
+                            html += '<div class="col-sm-7">';
+                                html += '<table class="table table-bordered table-hover">';
+                                    html += '<thead>';
+                                        html += '<tr>';
+                                            html += '<th colspan="2" class="action-buttons">';
+                                                html += '<a href="javascript:;" id="propertyOneVal" onclick="updateGroup(id)">';
+                                                    html += '颜色';
+                                                html += '</a>';
+                                                html += '<span style="float:right;">';
+                                                    html +='<a href="javascript:;" onclick="addName(1)" id="id-btn-dialog1" ><i class="icon-plus-sign purple bigger-150"></i></a> ';
+                                                html += '</span>';
+                                            html += '</th>';
+                                        html += '</tr>';
+                                    html += '</thead>';
+                                html += '</table>';
+                                
+                                html += '<table class="table table-bordered table-hover">';
+                                    html += '<thead>';
+                                        html += '<tr>';
+                                            html += '<th colspan="2" class="action-buttons">';
+                                                html += '<a href="javascript:;" id="propertyTwoVal" onclick="updateGroup(id)">';
+                                                    html += '尺寸';
+                                                html += '</a>';
+                                                html += '<span style="float:right;">';
+                                                    html +='<a href="javascript:;" onclick="addName(2)" id="id-btn-dialog1" ><i class="icon-plus-sign purple bigger-150"></i></a> ';
+                                                html += '</span>';
+                                            html += '</th>';
+                                        html += '</tr>';
+                                    html += '</thead>';
+                                html += '</table>';
+                        html += '<div class="col-sm-3"></div>';
+                        $("#showTag").html(html);
+                    }
+                });
+            }
+            
+            //展示单位价格项
+            function showPrice(obj){
+                $("#showUnit").html("");
+                if(obj.length > 0){
+                    var url = '/backstage/unit/unitList';
+                    var query = "unitGroupId="+obj;
+                    $.post(url,query,function(data){
+                        if(data.status){
+                            html = '';
+                            html += '<div class="col-md-2"></div>';
+                            html += '<div class="col-md-8">';
+                                html += '<table class="table table-bordered table-hover">';
+                                    html += '<thead>';
+                                        html += '<tr>';
+                                            html += '<th width="80px">单位名称</th><th>批发价</th><th>零售价1</th><th>零售价2</th><th>成本价</th><th>最低价</th><th>条码1</th><th>条码2</th>';
+                                        html += '</tr>';
+                                    html += '</thead>';
+                                    html += '<tbody>';
+                                    var unitArr = data.unitList;
+                                        for(var i=0;i < unitArr.length;i++){
+                                            html += '<tr>';
+                                                html += '<td>';
+                                                    html += unitArr[i]["name"];
+                                                    html += '<input type="hidden" name="unit_'+i+'" value="'+unitArr[i]["id"]+'">';
+                                                    html += '<input type="hidden" name="unitName_'+i+'" value="'+unitArr[i]["name"]+'">';
+                                                    html += '<input type="hidden" name="unitSort_'+i+'" value="'+unitArr[i]["sort"]+'">';
+                                                html += '</td>';
+                                                html += '<td>';
+                                                    html += '<input type="text" name="tradePrice_'+i+'" style="width:98%" placeholder="0.00">';
+                                                html += '</td>';
+                                                html += '<td>';
+                                                    html += '<input type="text" name="retailPrice_'+i+'" style="width:98%" placeholder="0.00">';
+                                                html += '</td>';
+                                                html += '<td>';
+                                                    html += '<input type="text" name="retailPrice1_'+i+'" style="width:98%" placeholder="0.00">';
+                                                html += '</td>';
+                                                html += '<td>';
+                                                    html += '<input type="text" name="costPrice_'+i+'" style="width:98%" placeholder="0.00">';
+                                                html += '</td>';
+                                                html += '<td>';
+                                                    html += '<input type="text" name="limitPrice_'+i+'" style="width:98%" placeholder="0.00">';
+                                                html += '</td>';
+                                                html += '<td>';
+                                                    html += '<input type="text" name="barcode_'+i+'" style="width:98%">';
+                                                html += '</td>';
+                                                html += '<td>';
+                                                    html += '<input type="text" name="barcode1_'+i+'" style="width:98%">';
+                                                html += '</td>';
+                                            html += '</tr>';
+                                        }
+                                    html += '</tbody>';
+                                html += '</table>';
+                            html += '</div>';
+                            html += '<div class="col-md-2"></div>';
+                            
+                            $("#showUnit").html(html);
+                        }else{
+                            alert(data.msg+",请重新操作");
+                        }
+                    });
+                    
+                }
+            }
+            
+            //获取店铺商品属性
+            function getShopProperty(){
+                var url = '/backstage/goods/getShopProperty';
+                var obj = new Object;
+                obj.rows = 1000;
+                $.post(url,obj,function(data){
+                    $("#propertyOneTitle").html(data.data.property.goodsPropertyOne);
+                    $("#propertyTwoTitle").html(data.data.property.goodsPropertyTwo);
+                    $("#propertyThreeTitle").html(data.data.property.goodsPropertyThree);
+                    var html = '<option value="">----请选择----</option>';
+                    for(var i = 0;i < data.data.unitGroupList.length;i++){
+                        html += '<option value="'+data.data.unitGroupList[i]["groupId"]+'">';
+                        html += data.data.unitGroupList[i]["unitName"]+"("+data.data.unitGroupList[i]["unitRatio"]+")";
+                    }
+                    $("#unitGroupId").html(html);
+                });
+            }
+        </script>
+    </body>
+
+</html>
